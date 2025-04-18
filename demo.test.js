@@ -1,3 +1,5 @@
-test('demo suma', () => {
-    expect(1 + 1).toBe(2);
+const { saludar } = require('./index');
+
+test('La función saludar retorna "¡Hola DevSecOps!"', () => {
+    expect(saludar()).toBe('¡Hola DevSecOps!');
 });

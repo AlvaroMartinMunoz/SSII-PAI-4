@@ -1,1 +1,4 @@
-console.log('¡Hola DevSecOps!');
+function saludar() {
+    return '¡Hola DevSecOps!';
+}
+module.exports = { saludar };
