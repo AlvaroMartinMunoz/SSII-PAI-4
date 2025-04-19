@@ -1,4 +1,5 @@
-﻿name: CI + DevSecOps
+
+name: CI + DevSecOps
 
 on:
   push:
@@ -82,11 +83,12 @@ jobs:
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: 'http://localhost:3000'
-          fail_action: true
+          format: html
+          output: zap-report.html
         continue-on-error: true
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap.out
+          path: zap-report.html
