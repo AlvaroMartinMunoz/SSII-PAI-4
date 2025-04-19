@@ -79,7 +79,6 @@ jobs:
         with:
           target: 'http://localhost:3000'
           docker_name: 'zaproxy/zap-stable'
-          upload_artifact: false
           allow_issue_writing: true
         continue-on-error: true
 
