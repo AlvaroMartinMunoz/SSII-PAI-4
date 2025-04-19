@@ -1,9 +1,8 @@
-
 name: CI + DevSecOps
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -21,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Install dependencies
         run: npm ci
@@ -30,7 +29,6 @@ jobs:
         run: npm test
 
       # -------------------- SCA: Análisis de dependencias --------------------
-
       - name: Audit dependencies and fail on high vulnerabilities (SCA)
         run: |
           echo "Running npm audit..."
@@ -46,6 +44,7 @@ jobs:
           else
             echo "✅ No high vulnerabilities found."
           fi
+
       # -------------------- SAST: Semgrep --------------------
       - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
@@ -53,7 +52,7 @@ jobs:
           config: "p/default"
         continue-on-error: true
 
-      # -------------------- IAC Security (Opcional para bonus) --------------------
+      # -------------------- IAC Security --------------------
       - name: Trivy IaC scan (Dockerfile example)
         uses: aquasecurity/trivy-action@master
         with:
@@ -77,8 +76,8 @@ jobs:
       - name: Run OWASP ZAP Baseline Scan (DAST)
         uses: zaproxy/action-baseline@v0.8.0
         with:
-          target: 'http://localhost:3000'
-          docker_name: 'zaproxy/zap-stable'
+          target: "http://localhost:3000"
+          docker_name: "zaproxy/zap-stable"
           allow_issue_writing: true
         continue-on-error: true
 
@@ -90,3 +89,22 @@ jobs:
             report_html.html
             report_json.json
             report_md.md
+
+      # -------------------- Gestión de vulnerabilidades en DefectDojo --------------------
+      - name: Upload npm audit report to DefectDojo
+        uses: ivanamat/defectdojo-import-scan@v1
+        with:
+          token: ${{ secrets.DEFECTDOJO_TOKEN }}
+          defectdojo_url: ${{ secrets.DEFECTDOJO_URL }}
+          file: audit-report.json
+          scan_type: "NPM Audit"
+          engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
+
+      - name: Upload ZAP JSON report to DefectDojo
+        uses: ivanamat/defectdojo-import-scan@v1
+        with:
+          token: ${{ secrets.DEFECTDOJO_TOKEN }}
+          defectdojo_url: ${{ secrets.DEFECTDOJO_URL }}
+          file: report_json.json
+          scan_type: "ZAP Baseline Scan"
+          engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
