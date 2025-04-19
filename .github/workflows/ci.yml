@@ -14,9 +14,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 0) Crear carpeta de reportes
+      - name: Create reportes directory
+        run: mkdir -p reportes
+
+      # 1) Checkout del código
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2) Instalar Docker Compose (si no está)
+      - name: Setup Docker Compose
+        run: |
+          docker compose version || (
+            curl -L https://github.com/docker/compose/releases/download/v2.6.1/docker-compose-$(uname -s)-$(uname -m) \
+              -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+          )
+
+      # 3) Clonar y arrancar DefectDojo
+      - name: Clone DefectDojo
+        run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
+
+      - name: Start DefectDojo
+        run: |
+          cd defectdojo
+          docker-compose up -d
+
+      - name: Wait for DefectDojo to be ready
+        run: |
+          until curl -s http://localhost:8080/api/v2/products/; do
+            echo "Waiting for DefectDojo…"
+            sleep 10
+          done
+
+      # 4) Setup Node.js y dependencias
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -25,34 +56,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 5) Tests unitarios
       - name: Run unit tests
         run: npm test
 
-      # -------------------- SCA: Análisis de dependencias --------------------
+      # 6) SCA: npm audit → reportes/audit-report.json
       - name: Audit dependencies and fail on high vulnerabilities (SCA)
         run: |
           echo "Running npm audit..."
-          npm audit --json > audit-report.json || true
-
+          npm audit --json > reportes/audit-report.json || true
           echo "🧾 Audit report:"
-          cat audit-report.json
-
+          cat reportes/audit-report.json
           echo "🔍 Checking for high severity vulnerabilities..."
-          if grep -q '"severity":"high"' audit-report.json; then
-            echo "❌ High vulnerabilities found in dependencies."
+          if grep -q '"severity":"high"' reportes/audit-report.json; then
+            echo "❌ High vulnerabilities found."
             exit 1
           else
             echo "✅ No high vulnerabilities found."
           fi
 
-      # -------------------- SAST: Semgrep --------------------
+      # 7) SAST: Semgrep
       - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
         continue-on-error: true
 
-      # -------------------- IAC Security --------------------
+      # 8) IaC Security: Trivy
       - name: Trivy IaC scan (Dockerfile example)
         uses: aquasecurity/trivy-action@master
         with:
@@ -60,7 +90,7 @@ jobs:
           scan-ref: .
         continue-on-error: true
 
-      # -------------------- Start app for DAST --------------------
+      # 9) Levantar la app para DAST
       - name: Start the app
         run: |
           nohup npm start > app.log 2>&1 &
@@ -72,7 +102,7 @@ jobs:
           name: app-logs
           path: app.log
 
-      # -------------------- DAST: OWASP ZAP --------------------
+      # 10) DAST: OWASP ZAP Baseline → mueve sus reports a reportes/
       - name: Run OWASP ZAP Baseline Scan (DAST)
         uses: zaproxy/action-baseline@v0.8.0
         with:
@@ -81,22 +111,23 @@ jobs:
           allow_issue_writing: true
         continue-on-error: true
 
-      - name: Upload ZAP Report
+      - name: Move ZAP reports into reportes
+        run: |
+          mv report_html.html report_json.json report_md.md reportes/
+
+      - name: Upload ZAP Report (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: |
-            report_html.html
-            report_json.json
-            report_md.md
+          path: reportes
 
-      # -------------------- Gestión de vulnerabilidades en DefectDojo --------------------
+      # 11) Importar reportes desde reportes/ a DefectDojo
       - name: Upload npm audit report to DefectDojo
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: ${{ secrets.DEFECTDOJO_URL }}
-          file: audit-report.json
+          defectdojo_url: http://localhost:8080
+          file: reportes/audit-report.json
           scan_type: "NPM Audit"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
 
@@ -104,7 +135,7 @@ jobs:
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: ${{ secrets.DEFECTDOJO_URL }}
-          file: report_json.json
+          defectdojo_url: http://localhost:8080
+          file: reportes/report_json.json
           scan_type: "ZAP Baseline Scan"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
