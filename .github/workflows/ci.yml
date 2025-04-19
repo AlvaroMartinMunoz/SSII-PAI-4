@@ -14,31 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 0) Crear carpeta de reportes
-      - name: Create reportes directory
-        run: mkdir -p reportes
-
       # 1) Checkout del código
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2) Instalar Docker Compose (si no está)
-      - name: Setup Docker Compose
-        run: |
-          docker compose version || (
-            curl -L https://github.com/docker/compose/releases/download/v2.6.1/docker-compose-$(uname -s)-$(uname -m) \
-              -o /usr/local/bin/docker-compose
-            chmod +x /usr/local/bin/docker-compose
-          )
-
-      # 3) Clonar y arrancar DefectDojo
+      # 2) Clone y arrancar DefectDojo
       - name: Clone DefectDojo
         run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
 
       - name: Start DefectDojo
         run: |
           cd defectdojo
-          docker-compose up -d
+          docker compose up -d
 
       - name: Wait for DefectDojo to be ready
         run: |
@@ -46,6 +33,10 @@ jobs:
             echo "Waiting for DefectDojo…"
             sleep 10
           done
+
+      # 3) Preparar carpeta de reportes
+      - name: Create reportes directory
+        run: mkdir -p reportes
 
       # 4) Setup Node.js y dependencias
       - name: Setup Node.js
@@ -63,17 +54,8 @@ jobs:
       # 6) SCA: npm audit → reportes/audit-report.json
       - name: Audit dependencies and fail on high vulnerabilities (SCA)
         run: |
-          echo "Running npm audit..."
           npm audit --json > reportes/audit-report.json || true
-          echo "🧾 Audit report:"
-          cat reportes/audit-report.json
-          echo "🔍 Checking for high severity vulnerabilities..."
-          if grep -q '"severity":"high"' reportes/audit-report.json; then
-            echo "❌ High vulnerabilities found."
-            exit 1
-          else
-            echo "✅ No high vulnerabilities found."
-          fi
+          if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
 
       # 7) SAST: Semgrep
       - name: Run Semgrep (SAST)
@@ -102,7 +84,7 @@ jobs:
           name: app-logs
           path: app.log
 
-      # 10) DAST: OWASP ZAP Baseline → mueve sus reports a reportes/
+      # 10) DAST: OWASP ZAP Baseline
       - name: Run OWASP ZAP Baseline Scan (DAST)
         uses: zaproxy/action-baseline@v0.8.0
         with:
