@@ -78,7 +78,15 @@ jobs:
         uses: zaproxy/action-baseline@v0.8.0
         with:
           target: 'http://localhost:3000'
-          docker_name: 'zaproxy/zap-stable'  # Optional: fixes the pull error
-          artifact_name: zap-report
+          docker_name: 'zaproxy/zap-stable'
           allow_issue_writing: true
         continue-on-error: true
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
