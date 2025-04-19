@@ -26,25 +26,22 @@ jobs:
         run: npm test
 
       # -------------------- SCA: Análisis de dependencias --------------------
-      - name: Audit dependencies (SCA)
+
+      - name: Audit dependencies and fail on high vulnerabilities (SCA)
         run: |
-          npm audit --json > audit-report.json
+          echo "Running npm audit..."
+          npm audit --json > audit-report.json || true
+
+          echo "🧾 Audit report:"
           cat audit-report.json
-        continue-on-error: true
 
-      - name: Upload audit report
-        uses: actions/upload-artifact@v4
-        with:
-          name: audit-report
-          path: audit-report.json
-
-      - name: Fail on high vulnerabilities (SCA)
-        run: |
+          echo "🔍 Checking for high severity vulnerabilities..."
           if grep -q '"severity":"high"' audit-report.json; then
-            echo "High vulnerabilities found in dependencies."
+            echo "❌ High vulnerabilities found in dependencies."
             exit 1
+          else
+            echo "✅ No high vulnerabilities found."
           fi
-
       # -------------------- SAST: Semgrep --------------------
       - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
