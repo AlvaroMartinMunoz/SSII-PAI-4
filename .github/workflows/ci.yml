@@ -100,7 +100,7 @@ jobs:
       - name: Upload ZAP Report (artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: zap-report
+          name: zap-scan-report
           path: reportes
 
       # 11) Importar reportes desde reportes/ a DefectDojo
