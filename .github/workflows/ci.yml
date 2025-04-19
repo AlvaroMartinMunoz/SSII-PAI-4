@@ -38,51 +38,11 @@ jobs:
       - name: Create reportes directory
         run: mkdir -p reportes
 
-      # --- COMENTADO: Setup Node.js y dependencias ---
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: '16'
-
-      # - name: Install dependencies
-      #   run: npm ci
-
-      # --- COMENTADO: Tests unitarios ---
-      # - name: Run unit tests
-      #   run: npm test
-
-      # --- COMENTADO: SCA: npm audit ---
-      # - name: Audit dependencies and fail on high vulnerabilities (SCA)
-      #   run: |
-      #     npm audit --json > reportes/audit-report.json || true
-      #     if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
-
-      # --- COMENTADO: SAST: Semgrep ---
-      # - name: Run Semgrep (SAST)
-      #   uses: returntocorp/semgrep-action@v1
-      #   with:
-      #     config: "p/default"
-      #   continue-on-error: true
-
-      # --- COMENTADO: IaC Security: Trivy ---
-      # - name: Trivy IaC scan (Dockerfile example)
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     scan-type: config
-      #     scan-ref: .
-      #   continue-on-error: true
-
-      # --- COMENTADO: Levantar la app para DAST ---
-      # - name: Start the app
-      #   run: |
-      #     nohup npm start > app.log 2>&1 &
-      #     sleep 15
-
-      # - name: Upload app startup logs
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: app-logs
-      #     path: app.log
+      # --- Levantar la app para DAST ---
+      - name: Start the app
+        run: |
+          nohup npm start > app.log 2>&1 &
+          sleep 15
 
       # 10) DAST: OWASP ZAP Baseline
       - name: Run OWASP ZAP Baseline Scan (DAST)
@@ -115,6 +75,7 @@ jobs:
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
 
       - name: Upload ZAP JSON report to DefectDojo
+        if: success() && hashFiles('reportes/report_json.json') != ''
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
