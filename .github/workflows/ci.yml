@@ -80,6 +80,7 @@ jobs:
           target: 'http://localhost:3000'
           docker_name: 'zaproxy/zap-stable'
           allow_issue_writing: true
+          artifact_name: 'zapreport'
         continue-on-error: true
 
       - name: Upload ZAP Report
@@ -87,6 +88,6 @@ jobs:
         with:
           name: zap-report
           path: |
-            report_html.html
-            report_json.json
-            report_md.md
+            zap_report.html
+            zap_report.json
+            zap_report.md
