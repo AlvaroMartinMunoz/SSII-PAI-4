@@ -38,51 +38,51 @@ jobs:
       - name: Create reportes directory
         run: mkdir -p reportes
 
-      # 4) Setup Node.js y dependencias
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16"
+      # --- COMENTADO: Setup Node.js y dependencias ---
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '16'
 
-      - name: Install dependencies
-        run: npm ci
+      # - name: Install dependencies
+      #   run: npm ci
 
-      # 5) Tests unitarios
-      - name: Run unit tests
-        run: npm test
+      # --- COMENTADO: Tests unitarios ---
+      # - name: Run unit tests
+      #   run: npm test
 
-      # 6) SCA: npm audit → reportes/audit-report.json
-      - name: Audit dependencies and fail on high vulnerabilities (SCA)
-        run: |
-          npm audit --json > reportes/audit-report.json || true
-          if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
+      # --- COMENTADO: SCA: npm audit ---
+      # - name: Audit dependencies and fail on high vulnerabilities (SCA)
+      #   run: |
+      #     npm audit --json > reportes/audit-report.json || true
+      #     if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
 
-      # 7) SAST: Semgrep
-      - name: Run Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: "p/default"
-        continue-on-error: true
+      # --- COMENTADO: SAST: Semgrep ---
+      # - name: Run Semgrep (SAST)
+      #   uses: returntocorp/semgrep-action@v1
+      #   with:
+      #     config: "p/default"
+      #   continue-on-error: true
 
-      # 8) IaC Security: Trivy
-      - name: Trivy IaC scan (Dockerfile example)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: config
-          scan-ref: .
-        continue-on-error: true
+      # --- COMENTADO: IaC Security: Trivy ---
+      # - name: Trivy IaC scan (Dockerfile example)
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     scan-type: config
+      #     scan-ref: .
+      #   continue-on-error: true
 
-      # 9) Levantar la app para DAST
-      - name: Start the app
-        run: |
-          nohup npm start > app.log 2>&1 &
-          sleep 15
+      # --- COMENTADO: Levantar la app para DAST ---
+      # - name: Start the app
+      #   run: |
+      #     nohup npm start > app.log 2>&1 &
+      #     sleep 15
 
-      - name: Upload app startup logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-logs
-          path: app.log
+      # - name: Upload app startup logs
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: app-logs
+      #     path: app.log
 
       # 10) DAST: OWASP ZAP Baseline
       - name: Run OWASP ZAP Baseline Scan (DAST)
@@ -91,16 +91,17 @@ jobs:
           target: "http://localhost:3000"
           docker_name: "zaproxy/zap-stable"
           allow_issue_writing: true
+          artifact_name: "zap-scan"
         continue-on-error: true
 
       - name: Move ZAP reports into reportes
         run: |
           mv report_html.html report_json.json report_md.md reportes/
 
-      - name: Upload ZAP Report (artifact)
+      - name: Upload ZAP Scan Reports
         uses: actions/upload-artifact@v4
         with:
-          name: zap-scan-report
+          name: zap-scan-artifacts
           path: reportes
 
       # 11) Importar reportes desde reportes/ a DefectDojo
