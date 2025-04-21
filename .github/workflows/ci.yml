@@ -62,7 +62,11 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
+          generate-sarif: true # Generar reporte SARIF para DefectDojo
         continue-on-error: true
+
+      - name: Move Semgrep SARIF report
+        run: mv semgrep.sarif reportes/semgrep-report.sarif
 
       # 8) IaC Security: Trivy
       - name: Trivy IaC scan (Dockerfile example)
@@ -70,6 +74,8 @@ jobs:
         with:
           scan-type: config
           scan-ref: .
+          format: json # Generar reporte en JSON
+          output: reportes/trivy-report.json
         continue-on-error: true
 
       # 9) Levantar la app para DAST
@@ -113,6 +119,24 @@ jobs:
           scan_type: "NPM Audit"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
 
+      - name: Upload Semgrep SARIF report to DefectDojo
+        uses: ivanamat/defectdojo-import-scan@v1
+        with:
+          token: ${{ secrets.DEFECTDOJO_TOKEN }}
+          defectdojo_url: http://localhost:8080
+          file: reportes/semgrep-report.sarif
+          scan_type: "Semgrep JSON Report"
+          engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
+
+      - name: Upload Trivy JSON report to DefectDojo
+        uses: ivanamat/defectdojo-import-scan@v1
+        with:
+          token: ${{ secrets.DEFECTDOJO_TOKEN }}
+          defectdojo_url: http://localhost:8080
+          file: reportes/trivy-report.json
+          scan_type: "Trivy"
+          engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
+
       - name: Upload ZAP JSON report to DefectDojo
         uses: ivanamat/defectdojo-import-scan@v1
         with:
@@ -121,3 +145,19 @@ jobs:
           file: reportes/report_json.json
           scan_type: "ZAP Baseline Scan"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
+
+      # 12) Priorización/clasificación automatizada de vulnerabilidades
+      - name: Prioritize vulnerabilities in DefectDojo
+        run: |
+          curl -X POST \
+            -H "Authorization: Token ${{ secrets.DEFECTDOJO_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "rules": [
+                {"severity": "High", "priority": "P1", "status": "Active"},
+                {"severity": "Medium", "priority": "P2", "status": "Active"},
+                {"severity": "Low", "priority": "P3", "status": "Active"}
+              ]
+            }' \
+            http://localhost:8080/api/v2/findings/bulk_update/
+        continue-on-error: true
