@@ -50,6 +50,9 @@ jobs:
           echo "Parte 1: $(cut -d. -f1 ngrok-url.txt)"
           echo "Parte 2: $(cut -d. -f2- ngrok-url.txt)"
 
+      - name: Print known secret to compare
+        run: echo "${{ secrets.NGROK_AUTH_TOKEN}}"
+
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
         run: mkdir -p reportes
