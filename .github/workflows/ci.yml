@@ -190,18 +190,3 @@ jobs:
             }' \
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
-
-        # 🔍 Debug final: resumen
-      - name: Debug Final: Verificar reportes generados
-        run: |
-          echo "Archivos en reportes/"
-          ls -lh reportes/
-          echo -e "\nVerificando tamaños de los archivos clave:"
-          for f in audit-report.json semgrep-report.sarif trivy-report.json report_json.json; do
-            if [ -f "reportes/$f" ]; then
-              echo "$f encontrado. Tamaño:"
-              du -h reportes/$f
-            else
-              echo "$f no encontrado"
-            fi
-          done
