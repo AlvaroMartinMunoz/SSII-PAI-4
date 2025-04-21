@@ -26,11 +26,9 @@ jobs:
         working-directory: defectdojo
         run: docker compose up -d
 
-      - name: Show DefectDojo admin password
+      - name: Show DefectDojo logs (initializer)
         working-directory: defectdojo
-        run: |
-          echo "Buscando contraseña del admin..."
-          docker compose logs initializer | grep "Admin password:"
+        run: docker compose logs initializer
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
