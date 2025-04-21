@@ -225,9 +225,9 @@ jobs:
         continue-on-error: true
 
           # 14) Detener DefectDojo y limpiar
-          - name: Stop and remove DefectDojo containers
+      - name: Stop and remove DefectDojo containers
             run: docker compose down
             working-directory: defectdojo
 
-          - name: Remove ngrok tunnel
+      - name: Remove ngrok tunnel
             run: kill $(ps aux | grep '[n]grok' | awk '{print $2}')
