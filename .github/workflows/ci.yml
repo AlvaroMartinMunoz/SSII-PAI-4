@@ -26,12 +26,25 @@ jobs:
         working-directory: defectdojo
         run: |
           cp dojo/settings/settings.dist.py dojo/settings/settings.py
-          DD_INITIALIZE=true
           docker compose up -d
 
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
           sleep 15
           docker compose logs initializer > dojo-init.log
+
+
+      - name: Crear superusuario manualmente en DefectDojo
+        working-directory: defectdojo
+        run: |
+          echo "📦 Creando superusuario 'admin'..."
+          docker compose exec -T django ./manage.py createsuperuser --no-input --username admin --email admin@example.com || true
+
+          echo "🔑 Estableciendo contraseña 'admin123'..."
+          docker compose exec -T django ./manage.py shell -c \
+            "from django.contrib.auth.models import User; \
+             u=User.objects.get(username='admin'); \
+             u.set_password('admin123'); \
+             u.save()"
 
       - name: Subir dojo-init.log como artifact
         uses: actions/upload-artifact@v4
