@@ -61,11 +61,6 @@ jobs:
           npm audit --json > reportes/audit-report.json || true
           if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
 
-      - name: Debug: audit-report.json
-        run: |
-          echo "Contenido de audit-report.json:"
-          head -n 100 reportes/audit-report.json || echo "Archivo vacío o no encontrado"
-
       # 7) SAST: Semgrep
       - name: Install Semgrep
         run: pip install semgrep
@@ -74,22 +69,28 @@ jobs:
         run: |
           semgrep --config "p/default" --sarif --output semgrep.sarif .
         continue-on-error: true
+        env:
+          SEMGREP_PR_ID: ${{ github.event.pull_request.number }}
 
+      # 7.1) Depuración: Verificar archivos generados por Semgrep
+      - name: Debug Semgrep output
+        run: |
+          echo "Archivos en el directorio actual:"
+          ls -la
+          echo "Buscando archivos SARIF:"
+          find . -name "*.sarif"
+
+      # 7.2) Mover el reporte SARIF si existe
       - name: Move Semgrep SARIF report
         run: |
           if [ -f "semgrep.sarif" ]; then
+            mkdir -p reportes
             mv semgrep.sarif reportes/semgrep-report.sarif
+            echo "Reporte semgrep.sarif movido a reportes/semgrep-report.sarif"
+          else
+            echo "No se encontró semgrep.sarif, continuando..."
           fi
         continue-on-error: true
-
-      - name: Debug: semgrep-report.sarif
-        run: |
-          if [ -f "reportes/semgrep-report.sarif" ]; then
-            echo "Primeras líneas del SARIF:"
-            head -n 50 reportes/semgrep-report.sarif
-          else
-            echo "semgrep-report.sarif no existe"
-          fi
 
       # 8) IaC Security: Trivy
       - name: Trivy IaC scan (Dockerfile example)
@@ -100,15 +101,6 @@ jobs:
           format: json
           output: reportes/trivy-report.json
         continue-on-error: true
-
-      - name: Debug: trivy-report.json
-        run: |
-          if [ -f "reportes/trivy-report.json" ]; then
-            echo "Contenido parcial de trivy-report.json:"
-            head -n 100 reportes/trivy-report.json
-          else
-            echo "trivy-report.json no existe"
-          fi
 
       # 9) Levantar la app para DAST
       - name: Start the app
@@ -122,6 +114,10 @@ jobs:
           name: app-logs
           path: app.log
 
+        # 🔧 FIX Permisos antes de ZAP
+      - name: Fix directory permissions before running ZAP
+        run: sudo chmod -R a+w .
+
       # 10) DAST: OWASP ZAP Baseline
       - name: Run OWASP ZAP Baseline Scan (DAST)
         uses: zaproxy/action-baseline@v0.8.0
@@ -130,21 +126,10 @@ jobs:
           docker_name: "zaproxy/zap-stable"
           allow_issue_writing: true
         continue-on-error: true
-        env:
-          DOCKER_OPTIONS: "--user $(id -u):$(id -g)"
 
       - name: Move ZAP reports into reportes
         run: |
           mv report_html.html report_json.json report_md.md reportes/
-
-      - name: Debug: ZAP report_json.json
-        run: |
-          if [ -f "reportes/report_json.json" ]; then
-            echo "Contenido parcial de ZAP JSON:"
-            head -n 100 reportes/report_json.json
-          else
-            echo "ZAP JSON report no encontrado"
-          fi
 
       - name: Upload ZAP Report (artifact)
         uses: actions/upload-artifact@v4
@@ -206,12 +191,11 @@ jobs:
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
 
-      # 🔍 Debug final: resumen
+        # 🔍 Debug final: resumen
       - name: Debug Final: Verificar reportes generados
         run: |
           echo "Archivos en reportes/"
           ls -lh reportes/
-
           echo -e "\nVerificando tamaños de los archivos clave:"
           for f in audit-report.json semgrep-report.sarif trivy-report.json report_json.json; do
             if [ -f "reportes/$f" ]; then
