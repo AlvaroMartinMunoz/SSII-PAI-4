@@ -30,17 +30,24 @@ jobs:
 
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
           sleep 15
+
+          docker compose exec -T web python3 manage.py migrate
+
           echo "Creating superuser manually..."
-              docker compose exec -T uwsgi \
-                python3 manage.py createsuperuser \
-                --no-input \
-                --username admin \
-                --email admin@example.com || true
+          docker compose exec -T web python3 manage.py shell -c "
+      from django.contrib.auth.models import User;
+      username = 'admin';
+      password = 'yourcustompassword';
+      email = 'admin@example.com';
+      if not User.objects.filter(username=username).exists():
+          User.objects.create_superuser(username=username, email=email, password=password)
+      else:
+          u = User.objects.get(username=username);
+          u.set_password(password);
+          u.save()
+      "
 
-              docker compose exec -T uwsgi \
-                python3 manage.py shell -c "from django.contrib.auth.models import User; u = User.objects.get(username='admin'); u.set_password('yourcustompassword'); u.save()"
-
-            docker compose logs -t initializer > dojo-init.log
+          docker compose logs -t initializer > dojo-init.log
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
