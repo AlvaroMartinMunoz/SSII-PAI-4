@@ -30,45 +30,8 @@ jobs:
 
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
           sleep 15
-          docker compose logs initializer > dojo-init.log
+          docker compose logs -t initializer > dojo-init.log
 
-
-      - name: Crear superusuario manualmente en DefectDojo (con espera)
-        working-directory: defectdojo
-        run: |
-          echo "⏳ Esperando a que el contenedor 'django' esté corriendo..."
-
-          # Esperar hasta que el servicio 'django' esté activo (timeout: 60s)
-          for i in {1..30}; do
-            if docker compose ps | grep django | grep "Up" > /dev/null; then
-              echo "✅ Contenedor 'django' está corriendo."
-              break
-            fi
-            echo "⌛ Aún no está listo... esperando 2s"
-            sleep 2
-          done
-
-          # Verificamos de nuevo
-          if ! docker compose ps | grep django | grep "Up" > /dev/null; then
-            echo "❌ ERROR: El contenedor 'django' no está corriendo. Abortando."
-            exit 1
-          fi
-
-          echo "📦 Creando superusuario 'admin'..."
-          docker compose exec -T django ./manage.py createsuperuser --no-input --username admin --email admin@example.com || true
-
-          echo "🔑 Estableciendo contraseña 'admin123'..."
-          docker compose exec -T django ./manage.py shell -c \
-            "from django.contrib.auth.models import User; \
-             u=User.objects.get(username='admin'); \
-             u.set_password('admin123'); \
-             u.save()"
-
-      - name: Subir dojo-init.log como artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dojo-init-log
-          path: defectdojo/dojo-init.log
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
@@ -89,6 +52,11 @@ jobs:
           name: dojo-url
           path: ngrok-url.txt
 
+      - name: Subir dojo-init.log como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dojo-init-log
+          path: defectdojo/dojo-init.log
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
