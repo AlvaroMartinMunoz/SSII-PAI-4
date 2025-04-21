@@ -80,7 +80,9 @@ jobs:
       - name: Move Semgrep SARIF report
         run: |
           if [ -f "semgrep.sarif" ]; then
+            mkdir -p reportes
             mv semgrep.sarif reportes/semgrep-report.sarif
+            echo "Reporte semgrep.sarif movido a reportes/semgrep-report.sarif"
           else
             echo "No se encontró semgrep.sarif, continuando..."
           fi
