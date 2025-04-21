@@ -227,6 +227,12 @@ jobs:
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
 
+      - name: Upload all security scan reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-scan-reports
+          path: reportes/
+
       - name: Manual access window (15 mins)
         run: |
           echo "You now have 15 minutes to access DefectDojo via NGROK..."
