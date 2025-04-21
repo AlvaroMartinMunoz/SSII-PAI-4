@@ -26,13 +26,21 @@ jobs:
         working-directory: defectdojo
         run: |
           cp dojo/settings/settings.dist.py dojo/settings/settings.py
-          export DD_INITIALIZE=true
           docker compose up -d
 
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
           sleep 15
-          docker compose logs -t initializer > dojo-init.log
+          echo "Creating superuser manually..."
+              docker compose exec -T uwsgi \
+                python3 manage.py createsuperuser \
+                --no-input \
+                --username admin \
+                --email admin@example.com || true
 
+              docker compose exec -T uwsgi \
+                python3 manage.py shell -c "from django.contrib.auth.models import User; u = User.objects.get(username='admin'); u.set_password('yourcustompassword'); u.save()"
+
+            docker compose logs -t initializer > dojo-init.log
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
