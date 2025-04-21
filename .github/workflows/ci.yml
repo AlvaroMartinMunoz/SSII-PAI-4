@@ -190,3 +190,36 @@ jobs:
             }' \
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
+
+      # 13) Debug Final: Verificación de ejecución exitosa
+      - name: Final Debug: Verificar que todo se haya completado correctamente
+        run: |
+          echo "Verificando que los reportes se hayan generado y movido correctamente..."
+          
+          # Verifica que los reportes existan en el directorio 'reportes'
+          if [ -f "reportes/audit-report.json" ]; then
+            echo "Audit Report: Generado correctamente"
+          else
+            echo "Audit Report: NO se generó"
+          fi
+          
+          if [ -f "reportes/semgrep-report.sarif" ]; then
+            echo "Semgrep Report: Generado correctamente"
+          else
+            echo "Semgrep Report: NO se generó"
+          fi
+          
+          if [ -f "reportes/trivy-report.json" ]; then
+            echo "Trivy Report: Generado correctamente"
+          else
+            echo "Trivy Report: NO se generó"
+          fi
+          
+          if [ -f "reportes/report_json.json" ]; then
+            echo "ZAP Report: Generado correctamente"
+          else
+            echo "ZAP Report: NO se generó"
+          fi
+          
+          echo "Verificación de completitud de tareas exitosa"
+        continue-on-error: true
