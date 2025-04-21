@@ -22,14 +22,6 @@ jobs:
       - name: Clone DefectDojo
         run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
 
-      - name: Set environment for DefectDojo admin login
-        working-directory: defectdojo
-        run: |
-          echo "DD_ADMIN_USER=admin" >> .env
-          echo "DD_ADMIN_PASSWORD=admin123" >> .env
-          echo "DD_INITIALIZE=true" >> .env
-
-
       - name: Start DefectDojo with admin user setup
         working-directory: defectdojo
         run: |
@@ -55,18 +47,13 @@ jobs:
           curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok-url.txt
           echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
-      - name: Mostrar como fragmentos
-        run: |
-          echo "Parte 1: $(cut -d. -f1 ngrok-url.txt)"
-          echo "Parte 2: $(cut -d. -f2- ngrok-url.txt)"
 
-      - name: Dividir URL para evitar censura
-        run: |
-          full_url=$(cat ngrok-url.txt)
-          for (( i=0; i<${#full_url}; i++ )); do
-            echo -n "${full_url:$i:1}"
-          done
-          echo ""
+      - name: Subir URL como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dojo-url
+          path: ngrok-url.txt
+
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
