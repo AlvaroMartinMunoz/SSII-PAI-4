@@ -46,14 +46,17 @@ jobs:
       #     echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
       - name: Install LocalTunnel
-        run: npm install -g localtunnel
+        run: npm install -g localtunne
 
-      - name: Start LocalTunnel
+      - name: Start LocalTunnel and extract URL
         run: |
-          nohup lt --port 8080 --print-requests > lt-url.txt &
+          npm install -g localtunnel
+          nohup lt --port 8080 > lt.log 2>&1 &
           sleep 5
-          grep -o 'https://.*\.loca\.lt' lt-url.txt > lt-final-url.txt
-          echo "LT_URL=$(cat lt-final-url.txt)" >> $GITHUB_ENV
+          echo "Esperando a que LocalTunnel genere la URL..."
+          timeout 15 bash -c 'until grep -m1 -o "https://[a-zA-Z0-9.-]*\.loca\.lt" lt.log; do sleep 1; done' > lt-url.txt
+          echo "LT_URL=$(cat lt-url.txt)"
+          echo "LT_URL=$(cat lt-url.txt)" >> $GITHUB_ENV
 
       - name: Mostrar la URL pública de DefectDojo
         run: |
