@@ -48,7 +48,7 @@ jobs:
       - name: Mostrar como fragmentos
         run: |
           echo "Parte 1: $(cut -d. -f1 ngrok-url.txt)"
-          echo "Parte 2: $(cut -d. -f2- ngrok-url.txt)"
+          echo "Parte 2: $(cut -d. -f2- ngrok-url.txt)"
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
