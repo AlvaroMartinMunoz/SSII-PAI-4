@@ -37,7 +37,7 @@ jobs:
           docker compose exec -T uwsgi python3 manage.py shell -c "
           from django.contrib.auth.models import User;
           username = 'admin';
-          password = 'yourcustompassword';
+          password = 'admin123';
           email = 'admin@example.com';
           if not User.objects.filter(username=username).exists():
               User.objects.create_superuser(username=username, email=email, password=password)
@@ -226,6 +226,11 @@ jobs:
             }' \
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
+
+      - name: Manual access window (15 mins)
+        run: |
+          echo "You now have 15 minutes to access DefectDojo via NGROK..."
+          sleep 900
 
         # 13) Debug Final: Verificación de ejecución exitosa
       # - name: Final Debug: Verificar que todo se haya completado correctamente
