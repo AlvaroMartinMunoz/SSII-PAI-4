@@ -22,13 +22,16 @@ jobs:
       - name: Clone DefectDojo
         run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
 
+       -name: Set environment for DefectDojo admin login
+        working-directory: defectdojo
+        run: |
+          echo "DD_ADMIN_USER=admin" >> .env
+          echo "DD_ADMIN_PASSWORD=admin123" >> .env
+          echo "DD_INITIALIZE=true" >> .env
+
       - name: Start DefectDojo
         working-directory: defectdojo
         run: docker compose up -d
-
-      - name: Show DefectDojo logs (initializer)
-        working-directory: defectdojo
-        run: docker compose logs initializer
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
