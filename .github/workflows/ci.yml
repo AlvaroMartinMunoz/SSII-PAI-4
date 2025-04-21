@@ -22,7 +22,7 @@ jobs:
       - name: Clone DefectDojo
         run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
 
-       -name: Set environment for DefectDojo admin login
+      - name: Set environment for DefectDojo admin login
         working-directory: defectdojo
         run: |
           echo "DD_ADMIN_USER=admin" >> .env
