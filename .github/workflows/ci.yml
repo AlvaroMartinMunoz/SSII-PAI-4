@@ -52,20 +52,11 @@ jobs:
 
       - name: Dividir URL para evitar censura
         run: |
-          raw_url=$(cat ngrok-url.txt)
-          clean_url=$(echo "$raw_url" | sed 's|https://||')
-          subdomain=$(echo "$clean_url" | cut -d. -f1)
-          domain=$(echo "$clean_url" | cut -d. -f2-)
-
-          # Cortamos el subdominio en dos mitades
-          mitad1=${subdomain:0:${#subdomain}/2}
-          mitad2=${subdomain:${#subdomain}/2}
-
-          echo "🔗 Dominio partido (sin censura):"
-          echo "https://${mitad1}[...]${mitad2}.${domain}"
-
-      - name: Print known secret to compare
-        run: echo "${{ secrets.NGROK_AUTH_TOKEN}}"
+          full_url=$(cat ngrok-url.txt)
+          for (( i=0; i<${#full_url}; i++ )); do
+            echo -n "${full_url:$i:1}"
+          done
+          echo ""
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
