@@ -58,15 +58,15 @@ jobs:
           if grep -q '"severity":"high"' reportes/audit-report.json; then exit 1; fi
 
       # 7) SAST: Semgrep
-      - name: Run Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: "p/default"
-          auditOn: "push,pull_request"
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep and generate SARIF
+        run: |
+          semgrep --config "p/default" --sarif --output semgrep.sarif .
         continue-on-error: true
         env:
           SEMGREP_PR_ID: ${{ github.event.pull_request.number }}
-        run: semgrep --config "p/default" --sarif --output semgrep.sarif .
 
       # 7.1) Depuración: Verificar archivos generados por Semgrep
       - name: Debug Semgrep output
