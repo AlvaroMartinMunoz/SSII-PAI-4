@@ -45,8 +45,13 @@ jobs:
       #     curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok-url.txt
       #     echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
-      - name: Install LocalTunnel
-        run: npm install -g localtunnel
+
+      - name: Obtener IP pública del runner
+        run: |
+          echo "::group::IP del runner (pública)"
+          curl -s https://api.ipify.org
+          echo ""
+          echo "::endgroup::"
 
       - name: Start LocalTunnel and extract URL
         run: |
