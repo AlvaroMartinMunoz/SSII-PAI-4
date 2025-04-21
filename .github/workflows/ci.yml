@@ -29,10 +29,12 @@ jobs:
 
       - name: Wait for DefectDojo to be ready
         run: |
-          until curl -s http://localhost:8080/api/v2/products/; do
+          until curl --fail http://localhost:8080/api/v2/products/; do
             echo "Waiting for DefectDojo…"
             sleep 10
           done
+      - name: Show DefectDojo logs
+        run: docker compose logs --tail 50
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
