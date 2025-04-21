@@ -224,10 +224,10 @@ jobs:
           echo "Verificación de completitud de tareas exitosa"
         continue-on-error: true
 
-          # 14) Detener DefectDojo y limpiar
+        # 14) Detener DefectDojo y limpiar
       - name: Stop and remove DefectDojo containers
-            run: docker compose down
-            working-directory: defectdojo
+        run: docker compose down
+        working-directory: defectdojo
 
       - name: Remove ngrok tunnel
-            run: kill $(ps aux | grep '[n]grok' | awk '{print $2}')
+        run: kill $(ps aux | grep '[n]grok' | awk '{print $2}')
