@@ -46,7 +46,7 @@ jobs:
       #     echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
       - name: Install LocalTunnel
-        run: npm install -g localtunne
+        run: npm install -g localtunnel
 
       - name: Start LocalTunnel and extract URL
         run: |
