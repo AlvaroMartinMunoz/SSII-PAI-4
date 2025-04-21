@@ -27,12 +27,22 @@ jobs:
           cd defectdojo
           docker compose up -d
 
-      - name: Wait for DefectDojo to be ready
+      - name: Wait for DefectDojo service
         run: |
-          until curl --fail http://localhost:8080/ > /dev/null 2>&1; do
-            echo "Waiting for DefectDojo…"
+          echo "⏳ Initial sleep for 30s to let containers spin up…"
+          sleep 30
+
+          echo "🔍 Polling DefectDojo until HTTP 200 OK"
+          until [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/)" = "200" ]; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/)
+            echo "  – Got HTTP $CODE, not ready yet."
+            echo "  – Containers status:"
+            docker compose ps
             sleep 10
           done
+
+          echo "✅ DefectDojo is up (HTTP 200)!"
+
       - name: Show DefectDojo logs
         run: docker compose logs --tail 50
 
