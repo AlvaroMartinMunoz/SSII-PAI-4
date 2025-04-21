@@ -236,7 +236,7 @@ jobs:
       - name: Manual access window (15 mins)
         run: |
           echo "You now have 15 minutes to access DefectDojo via NGROK..."
-          sleep 900
+          sleep 1800
 
         # 13) Debug Final: Verificación de ejecución exitosa
       # - name: Final Debug: Verificar que todo se haya completado correctamente
