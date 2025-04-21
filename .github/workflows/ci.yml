@@ -28,7 +28,7 @@ jobs:
 
       - name: Show DefectDojo logs (initializer)
         working-directory: defectdojo
-        run: docker compose logs initializer
+        run: docker compose logs initializer
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
