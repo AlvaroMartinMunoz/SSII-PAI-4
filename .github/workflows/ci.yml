@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-        # 2) Clone y arrancar DefectDojo
+      # 2) Clone y arrancar DefectDojo
       - name: Clone DefectDojo
         run: git clone https://github.com/DefectDojo/django-DefectDojo.git defectdojo
 
@@ -26,30 +26,17 @@ jobs:
         working-directory: defectdojo
         run: docker compose up -d
 
-      # 2.1) Esperar a que el initializer termine y luego al web service HTTP 200
-      - name: Wait for DefectDojo to be fully up
-        working-directory: defectdojo
+      # 🔗 Exponer DefectDojo con Ngrok
+      - name: Start ngrok tunnel to DefectDojo
         run: |
-          echo "⏳ Waiting for initializer container to finish migrations…"
-          # Esperamos a que el contenedor 'initializer' finalice con exit code 0
-          until [ "$(docker compose ps -q initializer | xargs docker inspect --format='{{.State.ExitCode}}' 2>/dev/null)" = "0" ]; do
-            echo "   • initializer still running or failed. Showing last logs:"
-            docker compose logs initializer --tail 20
-            sleep 10
-          done
-          echo "✅ Migrations done."
-
-          echo "⏳ Polling HTTP until we get 200 OK…"
-          # Ahora seguimos redirecciones (-L) y esperamos HTTP 200
-          until [ "$(curl -s -o /dev/null -w '%{http_code}' -L http://localhost:8080/)" = "200" ]; do
-            STATUS=$(curl -s -o /dev/null -w '%{http_code}' -L http://localhost:8080/)
-            echo "   • Got HTTP $STATUS, retrying in 10s…"
-            sleep 10
-          done
-          echo "✅ DefectDojo is READY (HTTP 200)!"
-
-      - name: Show DefectDojo logs
-        run: docker compose logs --tail 50
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt update && sudo apt install ngrok -y
+          ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          nohup ngrok http 8080 > ngrok.log &
+          sleep 10
+          curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok-url.txt
+          echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
@@ -146,12 +133,12 @@ jobs:
           name: zap-scan-report
           path: reportes
 
-      # 11) Importar reportes desde reportes/ a DefectDojo
+      # 11) Importar reportes desde reportes/ a DefectDojo (usando ngrok URL)
       - name: Upload npm audit report to DefectDojo
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: http://localhost:8080
+          defectdojo_url: ${{ env.NGROK_URL }}
           file: reportes/audit-report.json
           scan_type: "NPM Audit"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
@@ -160,7 +147,7 @@ jobs:
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: http://localhost:8080
+          defectdojo_url: ${{ env.NGROK_URL }}
           file: reportes/semgrep-report.sarif
           scan_type: "Semgrep JSON Report"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
@@ -170,7 +157,7 @@ jobs:
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: http://localhost:8080
+          defectdojo_url: ${{ env.NGROK_URL }}
           file: reportes/trivy-report.json
           scan_type: "Trivy"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
@@ -179,7 +166,7 @@ jobs:
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
-          defectdojo_url: http://localhost:8080
+          defectdojo_url: ${{ env.NGROK_URL }}
           file: reportes/report_json.json
           scan_type: "ZAP Baseline Scan"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
@@ -197,5 +184,5 @@ jobs:
                 {"severity": "Low", "priority": "P3", "status": "Active"}
               ]
             }' \
-            http://localhost:8080/api/v2/findings/bulk_update/
+            ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
