@@ -29,9 +29,19 @@ jobs:
           echo "DD_ADMIN_PASSWORD=admin123" >> .env
           echo "DD_INITIALIZE=true" >> .env
 
-      - name: Start DefectDojo
+
+      - name: Start DefectDojo with admin user setup
         working-directory: defectdojo
-        run: docker compose up -d
+        run: |
+          cp dojo/settings/settings.dist.py dojo/settings/settings.py
+          export DD_ADMIN_USER=admin
+          export DD_ADMIN_PASSWORD=admin123
+          export DD_INITIALIZE=true
+          docker compose up -d
+
+          echo "⏳ Waiting for DefectDojo to initialize (30s)..."
+          sleep 30
+          docker compose logs initializer
 
       # 🔗 Exponer DefectDojo con Ngrok
       - name: Start ngrok tunnel to DefectDojo
