@@ -31,10 +31,10 @@ jobs:
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
           sleep 15
 
-          docker compose exec -T uswgi python3 manage.py migrate
+          docker compose exec -T uwsgi python3 manage.py migrate
 
           echo "Creating superuser manually..."
-          docker compose exec -T uswgi python3 manage.py shell -c "
+          docker compose exec -T uwsgi python3 manage.py shell -c "
           from django.contrib.auth.models import User;
           username = 'admin';
           password = 'yourcustompassword';
