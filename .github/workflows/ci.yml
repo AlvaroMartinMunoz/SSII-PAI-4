@@ -38,6 +38,11 @@ jobs:
           curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok-url.txt
           echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
+      - name: Mostrar ngrok-url.txt en consola
+        run: |
+          echo "📡 URL de ngrok:"
+          cat ngrok-url.txt
+
       # 3) Preparar carpeta de reportes
       - name: Create reportes directory
         run: mkdir -p reportes
