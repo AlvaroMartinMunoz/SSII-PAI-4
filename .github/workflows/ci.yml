@@ -62,8 +62,8 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
-          publishSarif: true # Cambiado a publishSarif para asegurar compatibilidad
-          auditOn: "push,pull_request" # Ejecutar en eventos push y pull_request
+          publishSarif: true # Generar reporte SARIF
+          auditOn: "push,pull_request"
         env:
           SEMGREP_PR_ID: ${{ github.event.pull_request.number }}
         continue-on-error: true
@@ -138,7 +138,6 @@ jobs:
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
 
       - name: Upload Semgrep SARIF report to DefectDojo
-        if: exists('reportes/semgrep-report.sarif') # Subir solo si el archivo existe
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
