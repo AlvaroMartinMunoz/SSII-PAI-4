@@ -191,7 +191,7 @@ jobs:
             ${{ env.NGROK_URL }}/api/v2/findings/bulk_update/
         continue-on-error: true
 
-      # 13) Debug Final: Verificación de ejecución exitosa
+       # 13) Debug Final: Verificación de ejecución exitosa
       - name: Final Debug: Verificar que todo se haya completado correctamente
         run: |
           echo "Verificando que los reportes se hayan generado y movido correctamente..."
@@ -223,3 +223,11 @@ jobs:
           
           echo "Verificación de completitud de tareas exitosa"
         continue-on-error: true
+
+          # 14) Detener DefectDojo y limpiar
+          - name: Stop and remove DefectDojo containers
+            run: docker compose down
+            working-directory: defectdojo
+
+          - name: Remove ngrok tunnel
+            run: kill $(ps aux | grep '[n]grok' | awk '{print $2}')
