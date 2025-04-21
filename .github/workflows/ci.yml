@@ -45,10 +45,9 @@ jobs:
           curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok-url.txt
           echo "NGROK_URL=$(cat ngrok-url.txt)" >> $GITHUB_ENV
 
-      - name: Mostrar como fragmentos
+      - name: Mostrar la URL pública de DefectDojo
         run: |
-          echo "Parte 1: $(cut -d. -f1 ngrok-url.txt)"
-          echo "Parte 2: $(cut -d. -f2- ngrok-url.txt)"
+          echo "::notice title=DefectDojo URL::$(cat ngrok-url.txt)"
 
       - name: Print known secret to compare
         run: echo "${{ secrets.NGROK_AUTH_TOKEN}}"
