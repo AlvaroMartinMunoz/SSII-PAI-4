@@ -26,6 +26,7 @@ jobs:
         working-directory: defectdojo
         run: |
           cp dojo/settings/settings.dist.py dojo/settings/settings.py
+          DD_INITIALIZE=true
           docker compose up -d
 
           echo "⏳ Waiting for DefectDojo to initialize (30s)..."
