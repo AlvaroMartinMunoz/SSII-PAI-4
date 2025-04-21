@@ -62,11 +62,11 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
-          publishSarif: true # Generar reporte SARIF
           auditOn: "push,pull_request"
+        continue-on-error: true
         env:
           SEMGREP_PR_ID: ${{ github.event.pull_request.number }}
-        continue-on-error: true
+        run: semgrep --config "p/default" --sarif --output semgrep.sarif .
 
       # 7.1) Depuración: Verificar archivos generados por Semgrep
       - name: Debug Semgrep output
