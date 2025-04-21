@@ -62,11 +62,29 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
-          generate-sarif: true # Generar reporte SARIF para DefectDojo
+          publishSarif: true # Cambiado a publishSarif para asegurar compatibilidad
+          auditOn: "push,pull_request" # Ejecutar en eventos push y pull_request
+        env:
+          SEMGREP_PR_ID: ${{ github.event.pull_request.number }}
         continue-on-error: true
 
+      # 7.1) Depuración: Verificar archivos generados por Semgrep
+      - name: Debug Semgrep output
+        run: |
+          echo "Archivos en el directorio actual:"
+          ls -la
+          echo "Buscando archivos SARIF:"
+          find . -name "*.sarif"
+
+      # 7.2) Mover el reporte SARIF si existe
       - name: Move Semgrep SARIF report
-        run: mv semgrep.sarif reportes/semgrep-report.sarif
+        run: |
+          if [ -f "semgrep.sarif" ]; then
+            mv semgrep.sarif reportes/semgrep-report.sarif
+          else
+            echo "No se encontró semgrep.sarif, continuando..."
+          fi
+        continue-on-error: true
 
       # 8) IaC Security: Trivy
       - name: Trivy IaC scan (Dockerfile example)
@@ -74,7 +92,7 @@ jobs:
         with:
           scan-type: config
           scan-ref: .
-          format: json # Generar reporte en JSON
+          format: json
           output: reportes/trivy-report.json
         continue-on-error: true
 
@@ -120,6 +138,7 @@ jobs:
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
 
       - name: Upload Semgrep SARIF report to DefectDojo
+        if: exists('reportes/semgrep-report.sarif') # Subir solo si el archivo existe
         uses: ivanamat/defectdojo-import-scan@v1
         with:
           token: ${{ secrets.DEFECTDOJO_TOKEN }}
@@ -127,6 +146,7 @@ jobs:
           file: reportes/semgrep-report.sarif
           scan_type: "Semgrep JSON Report"
           engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT }}
+        continue-on-error: true
 
       - name: Upload Trivy JSON report to DefectDojo
         uses: ivanamat/defectdojo-import-scan@v1
